@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Happy Birthday</title>
+  <style>
+    :root{
+      --accent1:#ff99c8; --accent2:#ffc8dd; --accent3:#ffb3c6;
+      --bg:#ffeefb; --soft1:#ffdeeb; --soft2:#ffdbe9; --text:#3b2b33;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; font-family:'Comic Neue', cursive, system-ui;}
+    body{ background-color: #35353a; color:var(--text); overflow:hidden; display:flex; justify-content: center;align-items: center;}
+
+    /* original button/video styles (kept) */
+    .birthday-btn{
+      --scale:1; position:relative;  gap:10px;
+      padding:18px 30px; border-radius:50px;
+      background:linear-gradient(135deg,var(--accent1),var(--accent2),var(--accent3));
+      box-shadow:0 8px 20px rgba(255,182,193,0.6); color:#fff; font-weight:700; font-size:20px;
+      border:none; cursor:pointer; transform:translateZ(0) scale(var(--scale));
+      transition:transform 220ms cubic-bezier(.2,.9,.3,1); user-select:none; z-index:10;
+    }
+    .birthday-btn span{ font-size:22px; }
+    .birthday-btn:active{ --scale:0.95 }
+    .birthday-btn::before{ content:""; position:absolute; inset:0; border-radius:50px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.2) 50%, transparent 100%); pointer-events:none;
+    }
+    .sparkle{ width:24px;height:24px; display:inline-block; transform-origin:center center; animation:twinkle 2000ms infinite ease-in-out; }
+    @keyframes twinkle{ 0%,100%{opacity:0.3; transform:rotate(0deg) scale(0.9)} 50%{opacity:1; transform:rotate(45deg) scale(1.3)} }
+
+    /* confetti canvas */
+    #confetti-canvas{ pointer-events:none; position:fixed; inset:0; width:100%; height:100%; z-index:1000; }
+
+    /* slide-down */
+    .slide-down { animation: slideDown 2s forwards; }
+    @keyframes slideDown { 0%{ transform:translateY(0); opacity:1 } 100%{ transform:translateY(100vh); opacity:0 } }
+
+    /* fullscreen video */
+    #birthday-video{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:2000; background:black; }
+
+    /* ---------------- ANUSHKA PAGE styles (responsive) ---------------- */
+    #anushkaPage{ display:none; width:100%; height:100%; position:relative; }
+    .stage{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; position:relative; gap:18px; }
+    .card{
+      width:min(980px,96%); border-radius:20px; padding:20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,248,252,0.98));
+      box-shadow:0 12px 40px rgba(48,10,30,0.12);
+      display:grid; grid-template-columns:1fr 360px; gap:18px; align-items:center; position:relative; overflow:visible;
+      touch-action:manipulation; cursor:pointer;
+    }
+    .left{ padding:8px 14px; }
+    h1{ margin:0 0 6px 0; font-size:40px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .name{ background: linear-gradient(90deg,var(--accent1),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:900; font-size:44px; }
+    p.lead{ margin:8px 0 14px 0; color:#6b4b57; font-size:17px; line-height:1.4; }
+    .details{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .badge{ background:linear-gradient(180deg,var(--soft1),var(--soft2)); padding:8px 12px; border-radius:999px; font-weight:700; display:inline-flex; gap:8px; align-items:center; font-size:14px; box-shadow:0 6px 16px rgba(255,153,200,0.12); }
+    .caption{ margin-top:10px; color:#7a5460; font-size:14px; display:flex; gap:10px; align-items:center; }
+    .right{ display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; }
+    .cake-wrap{ width:260px; height:220px; display:grid; place-items:center; transform-origin:center; animation:float 4s ease-in-out infinite; }
+    @keyframes float{ 0%{transform:translateY(0)} 50%{transform:translateY(-10px)} 100%{transform:translateY(0)} }
+
+    .balloon{ position:absolute; width:68px; height:100px; transform-origin:center bottom; animation:balloon-float 6s infinite ease-in-out; opacity:0.97; filter:drop-shadow(0 8px 6px rgba(200,100,150,0.06)); pointer-events:none; }
+    .balloon.b1{ left:4%; top:8%; transform:rotate(-6deg) }
+    .balloon.b2{ left:82%; top:10%; transform:rotate(6deg) }
+    .balloon.b3{ left:68%; top:6%; transform:rotate(-3deg) }
+    @keyframes balloon-float{ 0%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-14px) rotate(4deg)} 100%{transform:translateY(0) rotate(0)} }
+
+    .sparkles{ position:absolute; inset:8px; pointer-events:none; overflow:visible; }
+    .spark{ position:absolute; width:12px; height:12px; opacity:.9; animation:twinkle 2.6s infinite ease-in-out; }
+
+    .tap-hint{ position:absolute; bottom:12px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.7); padding:6px 12px; border-radius:999px; font-size:13px; color:#7a5460; box-shadow:0 6px 12px rgba(0,0,0,0.06); pointer-events:none; z-index:1200; }
+
+    @media (max-width:880px){
+      .card{ grid-template-columns:1fr; padding:16px; gap:14px; border-radius:18px }
+      .cake-wrap{ width:210px; height:180px } h1{ font-size:28px } .name{ font-size:30px } p.lead{ font-size:16px } .badge{ font-size:13px; padding:7px 10px } .spark{ width:10px; height:10px }
+    }
+    @media (max-width:420px){
+      .card{ padding:12px; border-radius:14px } .cake-wrap{ width:180px; height:150px } h1{ font-size:22px } .name{ font-size:26px } p.lead{ font-size:15px }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <!-- Original button visible at first -->
+  <button id="birthday" class="birthday-btn" aria-pressed="false">
+    <svg class="sparkle" viewBox="0 0 24 24" fill="#ff99c8" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg>
+    <span>💖🎂 Happy Birthday 🎀🌸</span>
+    <svg class="sparkle" viewBox="0 0 24 24" fill="#ffc8dd" aria-hidden="true"><circle cx="12" cy="12" r="6"/></svg>
+  </button>
+
+  <!-- Video element (hidden until played) -->
+  <video id="birthday-video" src="birthday.mp4" playsinline webkit-playsinline></video>
+
+  <!-- ANUSHKA page (hidden initially) -->
+  <div id="anushkaPage" aria-hidden="true">
+    <div class="stage" role="main" aria-label="Happy birthday Anushka celebration">
+      <div class="card" role="button" tabindex="0" aria-pressed="false" id="card">
+        <div class="sparkles" aria-hidden="true">
+          <svg class="spark" style="left:6%; top:8%; animation-delay:0s" viewBox="0 0 24 24"><path fill="#ffd1e8" d="M12 2l1.9 4.8L19 8l-4.9 2.1L12 15l-2.1-4.9L5 8l5.1-1.2z"/></svg>
+          <svg class="spark" style="left:22%; top:28%; animation-delay:.4s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="#fff2f8"/></svg>
+          <svg class="spark" style="left:74%; top:18%; animation-delay:.8s" viewBox="0 0 24 24"><path fill="#ffb7d3" d="M12 3l1.3 2.8L16 7l-2.7 1.3L12 11l-1.3-2.7L8 7l2.7-1.2z"/></svg>
+        </div>
+
+        <div class="left">
+          <h1 id="title">
+            🎀 Happy Birthday
+            <span class="name">ANUSHKA</span>
+          </h1>
+
+          <p class="lead">Wishing you a day full of giggles, sprinkles, and pink balloons. You're sweet, sparkly, and oh-so-loved! 💕</p>
+
+          <div class="details" aria-hidden="false">
+            <div class="badge">🎂 Cake: Strawberry Surprise</div>
+            <div class="badge">🎵 Playlist: Cute & Chill</div>
+            <div class="badge">✨ Age: Forever 10 (at heart)</div>
+          </div>
+
+          <div class="caption">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff99c8" d="M12 2s2 3 5 3 5-3 5-3-2 5-5 6-5-6-5-6z"/></svg>
+            <span>Made with 💖 for ANUSHKA</span>
+          </div>
+        </div>
+
+        <div class="right" aria-hidden="false">
+          <div class="cake-wrap" id="cake" aria-hidden="true">
+            <!-- cake svg -->
+            <svg width="240" height="200" viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cute cake">
+              <ellipse cx="130" cy="200" rx="90" ry="12" fill="#fff4f8" opacity="0.9"/>
+              <rect x="40" y="110" width="180" height="70" rx="18" fill="#ffdbe9"/>
+              <path d="M40 110c20 18 40 12 60 12s40 6 60-12 40 0 40 0v14H40v-14z" fill="#fff0f6"/>
+              <g transform="translate(60,85)"><g class="straw" style="transform-origin:12px 20px; animation:pop 3s ease-in-out infinite"><path d="M8 0c6 0 8 5 8 8 0 6-8 12-8 12S0 14 0 8C0 5 2 0 8 0z" fill="#ff6b9a"/><circle cx="6" cy="6" r="1.1" fill="#ffdbe6"/></g></g>
+              <g transform="translate(110,75)"><g class="straw" style="transform-origin:12px 20px; animation:pop 3s ease-in-out .4s infinite"><path d="M8 0c6 0 8 5 8 8 0 6-8 12-8 12S0 14 0 8C0 5 2 0 8 0z" fill="#ff6b9a"/><circle cx="6" cy="6" r="1.1" fill="#ffdbe6"/></g></g>
+              <g transform="translate(170,85)"><g class="straw" style="transform-origin:12px 20px; animation:pop 3s ease-in-out .8s infinite"><path d="M8 0c6 0 8 5 8 8 0 6-8 12-8 12S0 14 0 8C0 5 2 0 8 0z" fill="#ff6b9a"/><circle cx="6" cy="6" r="1.1" fill="#ffdbe6"/></g></g>
+              <g transform="translate(130,60)"><rect x="-8" y="0" width="16" height="50" rx="6" fill="#fff6f9"/><rect x="-5" y="0" width="10" height="50" rx="3" fill="#ffd1e8"/><path d="M0 -14c6 6 6 12 0 18c-6-6-6-12 0-18z" fill="#ffd46b" transform="translate(0,-22)"/><path d="M0 -28c3 4 3 8 0 12c-3-4-3-8 0-12z" fill="#ffb36d" transform="translate(0,-22)"/></g>
+            </svg>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <div style="display:flex;gap:8px;align-items:center">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(180deg,#fff,#ffeef8);display:grid;place-items:center;box-shadow:0 8px 16px rgba(255,150,200,0.12)"><span style="font-size:18px">🌸</span></div>
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(180deg,#fff,#fff2f8);display:grid;place-items:center;box-shadow:0 8px 16px rgba(200,120,180,0.08)"><span style="font-size:18px">🎀</span></div>
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(180deg,#fff,#fff5fb);display:grid;place-items:center;box-shadow:0 8px 16px rgba(200,100,150,0.06)"><span style="font-size:18px">🩷</span></div>
+            </div>
+            <div style="font-size:13px;color:#7f5868">Tap the card to celebrate ✨</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- balloons -->
+      <svg class="balloon b1" viewBox="0 0 72 110" aria-hidden="true" style="z-index:10">
+        <defs><linearGradient id="b1g" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#ffd1e8"/><stop offset="1" stop-color="#ff99c8"/></linearGradient></defs>
+        <ellipse cx="36" cy="36" rx="28" ry="34" fill="url(#b1g)"/><path d="M36 70c4 6 4 12 0 18" stroke="#ffd1e8" stroke-width="3" stroke-linecap="round" fill="none"/>
+      </svg>
+      <svg class="balloon b2" viewBox="0 0 72 110" aria-hidden="true" style="z-index:9">
+        <defs><linearGradient id="b2g" x1="0" x2="1"><stop offset="0" stop-color="#fff1f6"/><stop offset="1" stop-color="#ffc8dd"/></linearGradient></defs>
+        <ellipse cx="36" cy="36" rx="28" ry="34" fill="url(#b2g)"/><path d="M36 70c4 6 4 12 0 18" stroke="#ffd1e8" stroke-width="3" stroke-linecap="round" fill="none"/>
+      </svg>
+      <svg class="balloon b3" viewBox="0 0 72 110" aria-hidden="true" style="z-index:11">
+        <defs><linearGradient id="b3g" x1="0" x2="1"><stop offset="0" stop-color="#fff7fb"/><stop offset="1" stop-color="#ffdbe9"/></linearGradient></defs>
+        <ellipse cx="36" cy="36" rx="28" ry="34" fill="url(#b3g)"/><path d="M36 70c4 6 4 12 0 18" stroke="#ffd1e8" stroke-width="3" stroke-linecap="round" fill="none"/>
+      </svg>
+
+      <div class="tap-hint" aria-hidden="true">Tap the card to celebrate 🎉</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // confetti system (shared)
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  let W = canvas.width = innerWidth;
+  let H = canvas.height = innerHeight;
+  let particles = [];
+
+  function resize(){ W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+  addEventListener('resize', resize, {passive:true});
+
+  function rand(a,b){ return Math.random()*(b-a)+a; }
+  function makeBurst(x,y,count=18){
+    const colors = ['#ff99c8','#ffc8dd','#ffd1e8','#fff2f8','#ffb3c6','#ffe5ec'];
+    for(let i=0;i<count;i++){
+      particles.push({
+        x,y,
+        vx: rand(-6,6),
+        vy: rand(-12,-2),
+        s: rand(6,14),
+        ang: rand(0,Math.PI*2),
+        spin: rand(-0.18,0.18),
+        life:0,
+        ttl: Math.round(rand(40,100)),
+        c: colors[Math.floor(Math.random()*colors.length)],
+        shape: Math.random()>.6 ? 'heart' : 'rect'
+      });
+    }
+  }
+
+  function drawHeart(ctx,size){
+    ctx.beginPath();
+    const top = -size*0.3;
+    ctx.moveTo(0,top);
+    ctx.bezierCurveTo(0, top - size/2, -size/2, top - size/2, -size/2, top);
+    ctx.bezierCurveTo(-size/2, top + size/2, 0, top + size, 0, top + size*1.6);
+    ctx.bezierCurveTo(0, top + size, size/2, top + size/2, size/2, top);
+    ctx.bezierCurveTo(size/2, top - size/2, 0, top - size/2, 0, top);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function update(){
+    ctx.clearRect(0,0,W,H);
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.vx *= 0.995; p.vy *= 0.997;
+      p.vy += 0.28;
+      p.x += p.vx; p.y += p.vy;
+      p.ang += p.spin;
+      p.life++;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - p.life/p.ttl);
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.ang);
+      ctx.fillStyle = p.c;
+      if(p.shape === 'heart') drawHeart(ctx,p.s);
+      else ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);
+      ctx.restore();
+      if(p.life>p.ttl || p.y>H+80) particles.splice(i,1);
+    }
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+
+  // button -> slide + play video
+  const btn = document.getElementById('birthday');
+  const video = document.getElementById('birthday-video');
+  const anushkaPage = document.getElementById('anushkaPage');
+
+  btn.addEventListener('click', ()=>{
+    // confetti while sliding
+    btn.classList.add('slide-down');
+    let iv = setInterval(()=>{
+      const r = btn.getBoundingClientRect();
+      makeBurst(r.left + r.width/2, r.top + r.height/2, 12);
+    }, 150);
+
+    setTimeout(()=>{
+      clearInterval(iv);
+      btn.style.display = 'none';
+      // show and play video immediately
+      video.style.display = 'block';
+      video.play().catch(()=>{ /* autoplay might be blocked */ });
+
+      // request fullscreen if possible
+      if (video.requestFullscreen) video.requestFullscreen().catch(()=>{});
+      else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+    }, 3000); // matches slide duration
+  });
+
+  // When video ends -> show ANUSHKA page immediately (no 2s gap)
+  video.addEventListener('ended', async ()=>{
+    // try exit fullscreen (best-effort)
+    try{
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }catch(e){/*ignore*/}
+
+    // hide video stage and reveal ANUSHKA page immediately
+    video.style.display = 'none';
+    anushkaPage.style.display = 'block';
+    anushkaPage.setAttribute('aria-hidden','false');
+
+    // initialize the in-page interactions (confetti while sliding card etc.)
+    initAnushkaInteractions();
+    // ensure top of page visible
+    window.scrollTo({top:0,behavior:'instant'});
+  });
+
+  // in-page interactions for ANUSHKA page
+  function initAnushkaInteractions(){
+    const card = document.getElementById('card');
+    const cake = document.getElementById('cake');
+    const tapHint = document.querySelector('.tap-hint');
+
+    function centerOf(el){
+      const r = el.getBoundingClientRect();
+      return { x: r.left + r.width/2, y: r.top + r.height/2 };
+    }
+
+    function burstAt(x,y,intensity=1){
+      makeBurst(x,y,12 * intensity);
+    }
+
+    function slideWithConfetti(el, duration=2100){
+      el.classList.add('slide-down');
+      const interval = setInterval(()=>{
+        const c = centerOf(el);
+        burstAt(c.x, c.y, 1);
+      }, 120);
+      setTimeout(()=>clearInterval(interval), duration);
+    }
+
+    function celebrate(){
+      if(card.classList.contains('celebrated')) return;
+      card.classList.add('celebrated');
+      const c = centerOf(card);
+      burstAt(c.x,c.y,3);
+      slideWithConfetti(card,2600);
+      if(tapHint) tapHint.style.opacity = '0';
+      setTimeout(()=>{
+        card.style.display = 'none';
+        const cx = window.innerWidth/2, cy = window.innerHeight/2;
+        makeBurst(cx,cy,90);
+      }, 3000);
+    }
+
+    card.addEventListener('click', celebrate, {passive:true});
+    cake && cake.addEventListener('click', celebrate, {passive:true});
+    card.addEventListener('keyup', (e)=>{ if(e.key==='Enter'||e.key===' ') celebrate(); });
+
+    // small strawberry pop animation rule insertion
+    const style = document.createElement('style');
+    style.textContent = '@keyframes pop{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.06)}100%{transform:translateY(0) scale(1)}} .straw{ transform-origin:center bottom }';
+    document.head.appendChild(style);
+
+    // show tap hint briefly
+    setTimeout(()=>{ if(tapHint) tapHint.style.opacity='0.6'; }, 800);
+    setTimeout(()=>{ if(tapHint) tapHint.style.opacity='0'; }, 8000);
+  }
+
+})();
+</script>
+</body>
+</html>
